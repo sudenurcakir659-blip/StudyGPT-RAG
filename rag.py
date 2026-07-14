@@ -2,7 +2,11 @@ import os
 import faiss
 import pickle
 
-import google.generativeai as genai
+import google.generativeai as genai 
+
+genai.configure(
+    api_key=os.getenv("GEMINI_API_KEY")
+)
 from sentence_transformers import SentenceTransformer 
 
 
@@ -67,7 +71,7 @@ if api_key:
 
 
 model = genai.GenerativeModel(
-    "gemini-1.5-flash"
+    "gemini-2.5-flash"
 )
 
 
