@@ -1,7 +1,5 @@
-import os
-import subprocess
 import streamlit as st
-
+import os
 import rag
 
 
@@ -16,391 +14,162 @@ st.set_page_config(
 )
 
 
-
 # =====================================================
 # CSS
 # =====================================================
 
-if os.path.exists("style.css"):
+st.markdown(
+    """
+    <style>
 
-    with open(
-        "style.css",
-        "r",
-        encoding="utf-8"
-    ) as f:
+    .main {
+        background-color: #f8f9fa;
+    }
 
-        st.markdown(
-            f"""
-            <style>
-            {f.read()}
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
+    .title {
+        font-size: 45px;
+        font-weight: 800;
+        color: #4F46E5;
+        text-align:center;
+    }
 
+    .subtitle {
+        text-align:center;
+        color:#555;
+        font-size:18px;
+    }
+
+    .chat-box {
+        padding:15px;
+        border-radius:15px;
+        background:white;
+        margin-bottom:10px;
+        box-shadow:0 2px 8px #ddd;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 
 # =====================================================
-# SESSION
+# HEADER
+# =====================================================
+
+st.markdown(
+    '<div class="title">📚 StudyGPT</div>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<div class="subtitle">Yapay Zeka Destekli Ders Asistanı</div>',
+    unsafe_allow_html=True
+)
+
+
+st.divider()
+
+
+# =====================================================
+# SESSION STATE
 # =====================================================
 
 if "messages" not in st.session_state:
-
     st.session_state.messages = []
-
-
-
-# =====================================================
-# KLASÖR
-# =====================================================
-
-BASE_DIR = os.path.dirname(
-    os.path.abspath(__file__)
-)
-
-
-PDF_FOLDER = os.path.join(
-    BASE_DIR,
-    "data",
-    "pdf"
-)
-
-
-os.makedirs(
-    PDF_FOLDER,
-    exist_ok=True
-)
-
-
-
-# =====================================================
-# BAŞLIK
-# =====================================================
-
-
-st.markdown(
-"""
-<div class="main-title">
-
-📚 StudyGPT
-
-</div>
-
-
-<div class="subtitle">
-
-Yapay Zeka Destekli Kişisel Ders Çalışma Asistanın 🚀
-
-<br>
-
-PDF yükle • Öğren • Soru sor
-
-</div>
-
-""",
-unsafe_allow_html=True
-)
-
-
-
-# =====================================================
-# SIDEBAR
-# =====================================================
-
-
-with st.sidebar:
-
-
-    st.header(
-        "📚 StudyGPT Menü"
-    )
-
-
-    st.divider()
-
-
-    mode = st.selectbox(
-        "🎯 Çalışma Modu",
-        [
-            "📖 Ders Modu",
-            "📝 Sınav Modu"
-        ]
-    )
-
-
-
-    st.divider()
-
-
-    st.subheader(
-        "📄 PDF Yönetimi"
-    )
-
-
-    uploaded_files = st.file_uploader(
-        "Ders PDF'lerini yükle",
-        type=["pdf"],
-        accept_multiple_files=True
-    )
-
-
-
-    if st.button(
-        "💾 PDF'leri Kaydet",
-        use_container_width=True
-    ):
-
-
-        if uploaded_files:
-
-
-            for file in uploaded_files:
-
-
-                file_path = os.path.join(
-                    PDF_FOLDER,
-                    file.name
-                )
-
-
-                with open(
-                    file_path,
-                    "wb"
-                ) as f:
-
-
-                    f.write(
-                        file.getbuffer()
-                    )
-
-
-            st.success(
-                "✅ PDF'ler kaydedildi."
-            )
-
-
-        else:
-
-
-            st.warning(
-                "PDF seçmelisin."
-            )
-
-
-
-    st.divider()
-
-
-
-    if st.button(
-        "🧠 Bilgi Bankasını Oluştur",
-        use_container_width=True
-    ):
-
-
-        with st.spinner(
-            "PDF'ler analiz ediliyor..."
-        ):
-
-
-            python_path = os.path.join(
-                ".venv",
-                "Scripts",
-                "python.exe"
-            )
-
-
-            result = subprocess.run(
-                [
-                    python_path,
-                    "ingest.py"
-                ],
-                capture_output=True,
-                text=True
-            )
-
-
-
-            if result.returncode == 0:
-
-
-                st.success(
-                    "🎉 Bilgi bankası hazır!"
-                )
-
-
-            else:
-
-
-                st.error(
-                    result.stderr
-                )
-
-
-
-    st.divider()
-
-
-
-    if st.button(
-        "🗑️ Sohbeti Temizle",
-        use_container_width=True
-    ):
-
-
-        st.session_state.messages = []
-
-        st.rerun()
-
-
-
-    st.info(
-"""
-🤖 **StudyGPT**
-
-📚 PDF'lerini öğrenir
-
-🧠 Bilgi bankası oluşturur
-
-💬 Sorularını cevaplar
-"""
-)
-
 
 
 # =====================================================
 # CHAT GEÇMİŞİ
 # =====================================================
 
-
-st.markdown(
-"## 💬 StudyGPT Sohbet"
-)
-
-
-
 for message in st.session_state.messages:
 
-
-    if message["role"] == "user":
-
-
-        st.markdown(
-f"""
-<div class="user-message">
-
-👤 <b>Sen</b>
-
-<br><br>
-
-{message["content"]}
-
-</div>
-""",
-unsafe_allow_html=True
-)
-
-
-
-    else:
-
-
-        st.markdown(
-f"""
-<div class="ai-message">
-
-🤖 <b>StudyGPT</b>
-
-<br><br>
-
-{message["content"]}
-
-</div>
-""",
-unsafe_allow_html=True
-)
-
+    with st.chat_message(message["role"]):
+        st.write(message["content"])
 
 
 
 # =====================================================
-# SORU ALMA
+# USER INPUT
 # =====================================================
 
-
-question = st.chat_input(
-"StudyGPT'ye soru sor..."
+prompt = st.chat_input(
+    "Sorunu yaz..."
 )
 
 
-
-if question:
+if prompt:
 
 
     st.session_state.messages.append(
         {
             "role":"user",
-            "content":question
+            "content":prompt
         }
     )
 
 
-
-    with st.spinner(
-        "🤖 StudyGPT düşünüyor..."
-    ):
-
-
-        try:
-
-
-            result = rag.ask_question(
-                question
-            )
-
-
-            answer = result["answer"]
+    with st.chat_message("user"):
+        st.write(prompt)
 
 
 
-            if mode == "📝 Sınav Modu":
+    # =================================================
+    # RAG SORGU
+    # =================================================
+
+    with st.chat_message("assistant"):
+
+        with st.spinner("Düşünüyorum..."):
+
+            try:
+
+                response = rag.ask(
+                    prompt
+                )
 
 
-                answer = f"""
-📌 **Sınav Odaklı Açıklama**
-
-{answer}
+                st.write(response)
 
 
-⭐ **Sınav için önemli noktalar**
-
-- Tanımları bil
-- Temel mantığı öğren
-- Formülleri tekrar et
-- Örnek çöz
-"""
-
+                st.session_state.messages.append(
+                    {
+                        "role":"assistant",
+                        "content":response
+                    }
+                )
 
 
-            st.session_state.messages.append(
-                {
-                    "role":"assistant",
-                    "content":answer
-                }
-            )
+            except Exception as e:
 
 
+                error_message = (
+                    "Bir hata oluştu:\n\n"
+                    + str(e)
+                )
 
-        except Exception as e:
+
+                st.error(
+                    error_message
+                )
 
 
-            st.session_state.messages.append(
-                {
-                    "role":"assistant",
-                    "content":f"❌ Hata oluştu: {e}"
-                }
-            )
+                st.session_state.messages.append(
+                    {
+                        "role":"assistant",
+                        "content":error_message
+                    }
+                )
 
 
 
-    st.rerun()
+# =====================================================
+# FOOTER
+# =====================================================
+
+st.divider()
+
+st.caption(
+    "StudyGPT © 2026 | FAISS + RAG + Gemini"
+)

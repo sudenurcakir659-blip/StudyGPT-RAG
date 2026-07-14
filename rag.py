@@ -1,203 +1,236 @@
 import os
 import faiss
-import requests
+import pickle
 
-from sentence_transformers import SentenceTransformer
-from utils import load_pickle
+import google.generativeai as genai
+from sentence_transformers import SentenceTransformer 
+
 
 # =====================================================
 # KLASÖRLER
 # =====================================================
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-VECTOR_FOLDER = os.path.join(BASE_DIR, "vector_db")
-
-INDEX_PATH = os.path.join(VECTOR_FOLDER, "vector.index")
-CHUNKS_PATH = os.path.join(VECTOR_FOLDER, "chunks.pkl")
-METADATA_PATH = os.path.join(VECTOR_FOLDER, "metadata.pkl")
-
-# =====================================================
-# OLLAMA
-# =====================================================
-
-OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "qwen3:4b"
-
-# =====================================================
-# EMBEDDING MODEL
-# =====================================================
-
-embedding_model = SentenceTransformer(
-    "all-MiniLM-L6-v2"
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
 )
 
+VECTOR_FOLDER = os.path.join(
+    BASE_DIR,
+    "vector_db"
+)
+
+
+INDEX_PATH = os.path.join(
+    VECTOR_FOLDER,
+    "vector.index"
+)
+
+CHUNKS_PATH = os.path.join(
+    VECTOR_FOLDER,
+    "chunks.pkl"
+)
+
+METADATA_PATH = os.path.join(
+    VECTOR_FOLDER,
+    "metadata.pkl"
+)
+
+
+
 # =====================================================
-# DATABASE
+# MODELLER
 # =====================================================
 
-def load_vector_database():
+MODEL_NAME = "all-MiniLM-L6-v2"
+
+
+embedding_model = SentenceTransformer(
+    MODEL_NAME
+)
+
+
+
+# =====================================================
+# GEMINI AYARI
+# =====================================================
+
+api_key = os.getenv(
+    "GEMINI_API_KEY"
+)
+
+
+if api_key:
+
+    genai.configure(
+        api_key=api_key
+    )
+
+
+model = genai.GenerativeModel(
+    "gemini-1.5-flash"
+)
+
+
+
+# =====================================================
+# DATABASE YÜKLE
+# =====================================================
+
+def load_database():
 
     if not os.path.exists(INDEX_PATH):
+
         raise Exception(
-            "Bilgi bankası bulunamadı.\n\n"
-            "Önce 'Bilgi Bankasını Oluştur' butonuna bas."
+            "FAISS veritabanı bulunamadı."
         )
 
-    index = faiss.read_index(INDEX_PATH)
 
-    chunks = load_pickle(CHUNKS_PATH)
+    index = faiss.read_index(
+        INDEX_PATH
+    )
 
-    metadata = load_pickle(METADATA_PATH)
+
+    with open(
+        CHUNKS_PATH,
+        "rb"
+    ) as f:
+
+        chunks = pickle.load(f)
+
+
+    with open(
+        METADATA_PATH,
+        "rb"
+    ) as f:
+
+        metadata = pickle.load(f)
+
 
     return index, chunks, metadata
 
 
+
 # =====================================================
-# ARAMA
+# BENZER DOKÜMAN ARAMA
 # =====================================================
 
-def search_context(question, top_k=5):
+def search_documents(
+        question,
+        k=5
+):
 
-    index, chunks, metadata = load_vector_database()
 
-    embedding = embedding_model.encode(
+    index, chunks, metadata = load_database()
+
+
+    vector = embedding_model.encode(
         [question],
         convert_to_numpy=True
-    ).astype("float32")
-
-    distances, indices = index.search(
-        embedding,
-        top_k
     )
 
-    context = []
 
-    for idx in indices[0]:
+    vector = vector.astype(
+        "float32"
+    )
 
-        if idx == -1:
-            continue
 
-        context.append({
-            "text": chunks[idx],
-            "source": metadata[idx]["source"],
-            "page": metadata[idx]["page"]
-        })
+    distances, ids = index.search(
+        vector,
+        k
+    )
 
-    return context
+
+    results = []
+
+
+    for idx in ids[0]:
+
+        if idx < len(chunks):
+
+            results.append(
+                {
+                    "text": chunks[idx],
+                    "source": metadata[idx]["source"],
+                    "page": metadata[idx]["page"]
+                }
+            )
+
+
+    return results
+
 
 
 # =====================================================
-# PROMPT
+# RAG CEVAP
 # =====================================================
 
-def create_prompt(question, context):
+def ask(question):
 
-    sources = ""
 
-    for item in context:
+    documents = search_documents(
+        question
+    )
 
-        sources += f"""
 
-Kaynak: {item["source"]}
-Sayfa: {item["page"]}
+    if not documents:
 
-{item["text"]}
+        return (
+            "Bu soru için uygun ders içeriği bulunamadı."
+        )
 
-------------------------------------------------
+
+
+    context = ""
+
+
+    for doc in documents:
+
+        context += f"""
+
+Kaynak:
+{doc['source']}
+
+Sayfa:
+{doc['page']}
+
+İçerik:
+{doc['text']}
+
+----------------------
+
 """
 
-    prompt = f"""
-Sen StudyGPT isimli akademik yardımcı asistansın.
 
-Sadece aşağıdaki kaynakları kullan.
+
+    prompt = f"""
+
+Sen StudyGPT isimli üniversite ders asistanısın.
+
+Öğrencinin sorusunu sadece verilen ders
+içeriğine dayanarak cevapla.
 
 Kurallar:
+- Türkçe cevap ver.
+- Açıklayıcı anlat.
+- Gereksiz bilgi ekleme.
+- Bilgi yoksa belirt.
 
-- Kaynak dışına çıkma.
-- Bilgi uydurma.
-- Eğer cevap kaynaklarda yoksa
-  "Kaynaklarda bu bilgi bulunamadı."
-  yaz.
 
-KAYNAKLAR:
+DERS İÇERİĞİ:
 
-{sources}
+{context}
+
 
 SORU:
 
 {question}
 
-CEVAP:
 """
 
-    return prompt
 
-
-# =====================================================
-# OLLAMA
-# =====================================================
-
-def ask_ollama(prompt):
-
-    response = requests.post(
-        OLLAMA_URL,
-        json={
-            "model": OLLAMA_MODEL,
-            "prompt": prompt,
-            "stream": False
-        },
-        timeout=120
+    response = model.generate_content(
+        prompt
     )
 
-    response.raise_for_status()
 
-    return response.json()["response"]
-
-
-# =====================================================
-# ANA FONKSİYON
-# =====================================================
-
-def ask_question(question):
-
-    context = search_context(question)
-
-    prompt = create_prompt(
-        question,
-        context
-    )
-
-    answer = ask_ollama(prompt)
-
-    return {
-        "answer": answer,
-        "sources": context
-    }
-
-
-# =====================================================
-# TEST
-# =====================================================
-
-if __name__ == "__main__":
-
-    while True:
-
-        q = input("\nSoru (q=çıkış): ")
-
-        if q.lower() == "q":
-            break
-
-        result = ask_question(q)
-
-        print("\n")
-        print(result["answer"])
-
-        print("\nKaynaklar\n")
-
-        for s in result["sources"]:
-
-            print(
-                f"{s['source']} - Sayfa {s['page']}"
-            )
+    return response.text
