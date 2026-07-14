@@ -1,0 +1,512 @@
+/* =====================================================
+   STUDYGPT FINAL MODERN AI UI
+===================================================== */
+
+
+/* =====================================================
+   SAYFA
+===================================================== */
+
+
+.stApp {
+
+    background:
+    radial-gradient(
+        circle at top,
+        #1e1b4b 0%,
+        #0f172a 45%,
+        #020617 100%
+    );
+
+    color:white;
+
+}
+
+
+
+header[data-testid="stHeader"] {
+
+    background:transparent;
+
+}
+
+
+
+#MainMenu {
+
+    visibility:hidden;
+
+}
+
+
+
+footer {
+
+    visibility:hidden;
+
+}
+
+
+
+/* =====================================================
+   BAŞLIK
+===================================================== */
+
+
+.main-title {
+
+
+    text-align:center;
+
+
+    font-size:65px;
+
+
+    font-weight:900;
+
+
+    background:linear-gradient(
+        90deg,
+        #38bdf8,
+        #a855f7
+    );
+
+
+    background-clip:text;
+
+    -webkit-background-clip:text;
+
+
+    -webkit-text-fill-color:transparent;
+
+
+    color:transparent;
+
+
+    margin-top:30px;
+
+}
+
+
+
+.subtitle {
+
+
+    text-align:center;
+
+
+    color:#cbd5e1;
+
+
+    font-size:22px;
+
+
+    line-height:1.6;
+
+
+    margin-bottom:40px;
+
+}
+
+
+
+/* =====================================================
+   SIDEBAR
+===================================================== */
+
+
+section[data-testid="stSidebar"] {
+
+
+    background:
+
+    linear-gradient(
+        180deg,
+        #111827,
+        #020617
+    );
+
+}
+
+
+
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3 {
+
+
+    color:#38bdf8;
+
+}
+
+
+
+section[data-testid="stSidebar"] p {
+
+
+    color:#e2e8f0;
+
+}
+
+
+
+
+/* =====================================================
+   INPUTLAR
+===================================================== */
+
+
+div[data-baseweb="input"] {
+
+
+    background:#1e293b !important;
+
+
+    border-radius:18px;
+
+
+    border:1px solid #334155;
+
+
+}
+
+
+
+div[data-baseweb="input"] input {
+
+
+    color:white !important;
+
+
+    background:#1e293b !important;
+
+
+    caret-color:white !important;
+
+
+    font-size:17px !important;
+
+}
+
+
+
+div[data-baseweb="input"] input::placeholder {
+
+
+    color:#94a3b8 !important;
+
+}
+
+
+
+
+/* CHAT INPUT */
+
+textarea {
+
+
+    background:#1e293b !important;
+
+
+    color:white !important;
+
+
+    caret-color:white !important;
+
+
+    border-radius:20px !important;
+
+}
+
+
+
+textarea::placeholder {
+
+
+    color:#94a3b8 !important;
+
+}
+
+
+
+
+/* =====================================================
+   BUTONLAR
+===================================================== */
+
+
+.stButton button {
+
+
+    background:
+
+    linear-gradient(
+        90deg,
+        #2563eb,
+        #9333ea
+    );
+
+
+    color:white;
+
+
+    border:none;
+
+
+    border-radius:15px;
+
+
+    padding:12px 25px;
+
+
+    font-size:16px;
+
+
+    font-weight:700;
+
+
+    transition:.3s;
+
+
+}
+
+
+
+.stButton button:hover {
+
+
+    transform:scale(1.05);
+
+
+    box-shadow:
+
+    0px 0px 25px #7c3aed;
+
+}
+
+
+
+
+/* =====================================================
+   CHAT BALONLARI
+===================================================== */
+
+
+.user-message {
+
+
+    background:
+
+    linear-gradient(
+        135deg,
+        #1e293b,
+        #334155
+    );
+
+
+    padding:20px;
+
+
+    border-radius:22px;
+
+
+    margin:20px 0;
+
+
+    border:1px solid #475569;
+
+
+    color:white;
+
+
+    font-size:17px;
+
+}
+
+
+
+
+
+.ai-message {
+
+
+    background:
+
+    linear-gradient(
+        135deg,
+        #172554,
+        #4c1d95
+    );
+
+
+    padding:25px;
+
+
+    border-radius:25px;
+
+
+    margin:20px 0;
+
+
+    border:1px solid #6366f1;
+
+
+    color:white;
+
+
+    font-size:17px;
+
+
+    line-height:1.7;
+
+}
+
+
+
+
+/* =====================================================
+   KAYNAK KARTLARI
+===================================================== */
+
+
+.source-card {
+
+
+    background:#111827;
+
+
+    padding:20px;
+
+
+    border-radius:20px;
+
+
+    border:1px solid #334155;
+
+
+    margin-top:15px;
+
+
+    color:#e2e8f0;
+
+}
+
+
+
+
+/* =====================================================
+   STREAMLIT KUTULARI
+===================================================== */
+
+
+div[data-testid="stAlert"] {
+
+
+    background:#111827;
+
+
+    border-radius:20px;
+
+
+    border:1px solid #334155;
+
+}
+
+
+
+.stSuccess {
+
+
+    background:#052e16;
+
+
+    border-radius:20px;
+
+}
+
+
+
+.stWarning {
+
+
+    border-radius:20px;
+
+}
+
+
+
+.stInfo {
+
+
+    background:#172554;
+
+
+    border-radius:20px;
+
+}
+
+
+
+
+/* =====================================================
+   BAŞLIKLAR
+===================================================== */
+
+
+h1,h2,h3 {
+
+
+    color:white;
+
+}
+
+
+
+
+/* =====================================================
+   BOŞLUK
+===================================================== */
+
+
+div[data-testid="stVerticalBlock"] {
+
+
+    gap:20px;
+
+}
+
+
+
+
+/* =====================================================
+   SCROLLBAR
+===================================================== */
+
+
+::-webkit-scrollbar {
+
+
+    width:8px;
+
+}
+
+
+
+::-webkit-scrollbar-track {
+
+
+    background:#020617;
+
+}
+
+
+
+::-webkit-scrollbar-thumb {
+
+
+    background:#7c3aed;
+
+
+    border-radius:10px;
+
+}
