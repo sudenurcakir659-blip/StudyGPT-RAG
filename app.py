@@ -5,7 +5,7 @@ import ingest
 
 
 # =====================================================
-# PAGE
+# PAGE CONFIG
 # =====================================================
 
 st.set_page_config(
@@ -16,61 +16,26 @@ st.set_page_config(
 
 
 # =====================================================
-# CSS
+# LOAD CSS
 # =====================================================
 
-st.markdown(
-"""
-<style>
+def load_css():
 
-.stApp{
-    background:#080f24;
-    color:white;
-}
+    if os.path.exists("style.css"):
 
+        with open(
+            "style.css",
+            "r",
+            encoding="utf-8"
+        ) as f:
 
-section[data-testid="stSidebar"]{
-    background:#0b1228;
-}
-
-
-h1,h2,h3,p,label{
-    color:white !important;
-}
+            st.markdown(
+                f"<style>{f.read()}</style>",
+                unsafe_allow_html=True
+            )
 
 
-.title{
-    text-align:center;
-    font-size:70px;
-    font-weight:700;
-    color:#7c8cff;
-}
-
-
-.subtitle{
-    text-align:center;
-    font-size:22px;
-    color:#cbd5ff;
-}
-
-
-.card{
-    background:#111936;
-    padding:25px;
-    border-radius:20px;
-    margin:20px;
-}
-
-
-button{
-    border-radius:15px !important;
-}
-
-
-</style>
-""",
-unsafe_allow_html=True
-)
+load_css()
 
 
 
@@ -80,17 +45,13 @@ unsafe_allow_html=True
 
 st.markdown(
 """
-<div class="title">
-📂 StudyGPT
+<div class="main-title">
+📚 StudyGPT
 </div>
 
 <div class="subtitle">
 Yapay Zeka Destekli Kişisel Ders Çalışma Asistanın 🚀
-</div>
-
 <br>
-
-<div class="subtitle">
 PDF yükle • Öğren • Soru sor
 </div>
 
@@ -147,7 +108,7 @@ with st.sidebar:
 
 
     st.caption(
-        "200MB per file • PDF"
+        "PDF desteklenir"
     )
 
 
@@ -168,6 +129,7 @@ with st.sidebar:
 
             for file in uploaded_files:
 
+
                 path = os.path.join(
                     "documents",
                     file.name
@@ -185,12 +147,12 @@ with st.sidebar:
 
 
             st.success(
-                "PDF'ler kaydedildi!"
+                "PDF'ler kaydedildi ✅"
             )
 
 
             st.info(
-                "Bilgi bankası için ingest çalıştırılmalı."
+                "Bilgi bankası oluşturmayı unutma."
             )
 
 
@@ -201,36 +163,93 @@ with st.sidebar:
             )
 
 
+
     st.divider()
 
 
-    st.button(
+
+    if st.button(
         "🧠 Bilgi Bankasını Oluştur",
         use_container_width=True
-    )
+    ):
+
+
+        with st.spinner(
+            "Bilgi bankası hazırlanıyor..."
+        ):
+
+            try:
+
+                ingest.main()
+
+                st.success(
+                    "Bilgi bankası hazır 🎉"
+                )
+
+
+            except Exception as e:
+
+                st.error(
+                    str(e)
+                )
+
 
 
 
 # =====================================================
-# CHAT
+# CHAT MEMORY
 # =====================================================
 
 if "messages" not in st.session_state:
 
-    st.session_state.messages=[]
+    st.session_state.messages = []
 
 
+
+
+# =====================================================
+# SHOW OLD MESSAGES
+# =====================================================
 
 for msg in st.session_state.messages:
 
-    with st.chat_message(
-        msg["role"]
-    ):
 
-        st.write(
-            msg["content"]
+    if msg["role"] == "user":
+
+
+        st.markdown(
+        f"""
+        <div class="user-message">
+
+        👤 {msg["content"]}
+
+        </div>
+        """,
+        unsafe_allow_html=True
         )
 
+
+    else:
+
+
+        st.markdown(
+        f"""
+        <div class="ai-message">
+
+        🤖 {msg["content"]}
+
+        </div>
+        """,
+        unsafe_allow_html=True
+        )
+
+
+
+
+
+# =====================================================
+# CHAT INPUT
+# =====================================================
 
 
 question = st.chat_input(
@@ -250,47 +269,59 @@ if question:
     )
 
 
-    with st.chat_message("user"):
+    st.markdown(
+    f"""
+    <div class="user-message">
 
-        st.write(question)
+    👤 {question}
 
-
-
-    with st.chat_message("assistant"):
-
-
-        with st.spinner(
-            "StudyGPT düşünüyor..."
-        ):
+    </div>
+    """,
+    unsafe_allow_html=True
+    )
 
 
-            try:
+
+    with st.spinner(
+        "StudyGPT düşünüyor... 🧠"
+    ):
 
 
-                answer = rag.ask(
-                    question
-                )
+        try:
 
 
-                st.write(
-                    answer
-                )
+            answer = rag.ask(
+                question
+            )
 
 
-                st.session_state.messages.append(
-                    {
-                        "role":"assistant",
-                        "content":answer
-                    }
-                )
+            st.markdown(
+            f"""
+            <div class="ai-message">
+
+            🤖 {answer}
+
+            </div>
+            """,
+            unsafe_allow_html=True
+            )
 
 
-            except Exception as e:
+            st.session_state.messages.append(
+                {
+                    "role":"assistant",
+                    "content":answer
+                }
+            )
 
 
-                st.error(
-                    str(e)
-                )
+        except Exception as e:
+
+
+            st.error(
+                str(e)
+            )
+
 
 
 
@@ -299,6 +330,7 @@ if question:
 # =====================================================
 
 st.divider()
+
 
 st.caption(
     "StudyGPT | FAISS + RAG + Gemini"
