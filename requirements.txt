@@ -4,3 +4,4 @@ numpy
 sentence-transformers
 requests
 google-generativeai  
+pypdf
