@@ -1,10 +1,11 @@
 import streamlit as st
 import os
 import rag
+import ingest
 
 
 # =====================================================
-# SAYFA AYARI
+# PAGE
 # =====================================================
 
 st.set_page_config(
@@ -19,38 +20,58 @@ st.set_page_config(
 # =====================================================
 
 st.markdown(
-    """
-    <style>
+"""
+<style>
 
-    .main {
-        background-color: #f8f9fa;
-    }
+.stApp{
+    background:#080f24;
+    color:white;
+}
 
-    .title {
-        font-size: 45px;
-        font-weight: 800;
-        color: #4F46E5;
-        text-align:center;
-    }
 
-    .subtitle {
-        text-align:center;
-        color:#555;
-        font-size:18px;
-    }
+section[data-testid="stSidebar"]{
+    background:#0b1228;
+}
 
-    .chat-box {
-        padding:15px;
-        border-radius:15px;
-        background:white;
-        margin-bottom:10px;
-        box-shadow:0 2px 8px #ddd;
-    }
 
-    </style>
-    """,
-    unsafe_allow_html=True
+h1,h2,h3,p,label{
+    color:white !important;
+}
+
+
+.title{
+    text-align:center;
+    font-size:70px;
+    font-weight:700;
+    color:#7c8cff;
+}
+
+
+.subtitle{
+    text-align:center;
+    font-size:22px;
+    color:#cbd5ff;
+}
+
+
+.card{
+    background:#111936;
+    padding:25px;
+    border-radius:20px;
+    margin:20px;
+}
+
+
+button{
+    border-radius:15px !important;
+}
+
+
+</style>
+""",
+unsafe_allow_html=True
 )
+
 
 
 # =====================================================
@@ -58,85 +79,208 @@ st.markdown(
 # =====================================================
 
 st.markdown(
-    '<div class="title">📚 StudyGPT</div>',
-    unsafe_allow_html=True
+"""
+<div class="title">
+📂 StudyGPT
+</div>
+
+<div class="subtitle">
+Yapay Zeka Destekli Kişisel Ders Çalışma Asistanın 🚀
+</div>
+
+<br>
+
+<div class="subtitle">
+PDF yükle • Öğren • Soru sor
+</div>
+
+""",
+unsafe_allow_html=True
 )
 
-st.markdown(
-    '<div class="subtitle">Yapay Zeka Destekli Ders Asistanı</div>',
-    unsafe_allow_html=True
-)
-
-
-st.divider()
 
 
 # =====================================================
-# SESSION STATE
+# SIDEBAR
+# =====================================================
+
+with st.sidebar:
+
+
+    st.markdown(
+    """
+    # 📚 StudyGPT Menü
+    """
+    )
+
+
+    st.divider()
+
+
+    st.subheader(
+        "🎯 Çalışma Modu"
+    )
+
+
+    mode = st.selectbox(
+        "",
+        [
+            "📖 Ders Modu",
+            "📝 Soru Çözme Modu"
+        ]
+    )
+
+
+    st.divider()
+
+
+    st.subheader(
+        "📄 PDF Yönetimi"
+    )
+
+
+    uploaded_files = st.file_uploader(
+        "Ders PDF'lerini yükle",
+        type=["pdf"],
+        accept_multiple_files=True
+    )
+
+
+    st.caption(
+        "200MB per file • PDF"
+    )
+
+
+    if st.button(
+        "📚 PDF'leri Kaydet",
+        use_container_width=True
+    ):
+
+
+        if uploaded_files:
+
+
+            os.makedirs(
+                "documents",
+                exist_ok=True
+            )
+
+
+            for file in uploaded_files:
+
+                path = os.path.join(
+                    "documents",
+                    file.name
+                )
+
+
+                with open(
+                    path,
+                    "wb"
+                ) as f:
+
+                    f.write(
+                        file.getbuffer()
+                    )
+
+
+            st.success(
+                "PDF'ler kaydedildi!"
+            )
+
+
+            st.info(
+                "Bilgi bankası için ingest çalıştırılmalı."
+            )
+
+
+        else:
+
+            st.warning(
+                "Önce PDF yükle."
+            )
+
+
+    st.divider()
+
+
+    st.button(
+        "🧠 Bilgi Bankasını Oluştur",
+        use_container_width=True
+    )
+
+
+
+# =====================================================
+# CHAT
 # =====================================================
 
 if "messages" not in st.session_state:
-    st.session_state.messages = []
 
-
-# =====================================================
-# CHAT GEÇMİŞİ
-# =====================================================
-
-for message in st.session_state.messages:
-
-    with st.chat_message(message["role"]):
-        st.write(message["content"])
+    st.session_state.messages=[]
 
 
 
-# =====================================================
-# USER INPUT
-# =====================================================
+for msg in st.session_state.messages:
 
-prompt = st.chat_input(
-    "Sorunu yaz..."
+    with st.chat_message(
+        msg["role"]
+    ):
+
+        st.write(
+            msg["content"]
+        )
+
+
+
+question = st.chat_input(
+    "Dersin hakkında soru sor..."
 )
 
 
-if prompt:
+
+if question:
 
 
     st.session_state.messages.append(
         {
             "role":"user",
-            "content":prompt
+            "content":question
         }
     )
 
 
     with st.chat_message("user"):
-        st.write(prompt)
+
+        st.write(question)
 
 
-
-    # =================================================
-    # RAG SORGU
-    # =================================================
 
     with st.chat_message("assistant"):
 
-        with st.spinner("Düşünüyorum..."):
+
+        with st.spinner(
+            "StudyGPT düşünüyor..."
+        ):
+
 
             try:
 
-                response = rag.ask(
-                    prompt
+
+                answer = rag.ask(
+                    question
                 )
 
 
-                st.write(response)
+                st.write(
+                    answer
+                )
 
 
                 st.session_state.messages.append(
                     {
                         "role":"assistant",
-                        "content":response
+                        "content":answer
                     }
                 )
 
@@ -144,22 +288,8 @@ if prompt:
             except Exception as e:
 
 
-                error_message = (
-                    "Bir hata oluştu:\n\n"
-                    + str(e)
-                )
-
-
                 st.error(
-                    error_message
-                )
-
-
-                st.session_state.messages.append(
-                    {
-                        "role":"assistant",
-                        "content":error_message
-                    }
+                    str(e)
                 )
 
 
@@ -171,5 +301,5 @@ if prompt:
 st.divider()
 
 st.caption(
-    "StudyGPT © 2026 | FAISS + RAG + Gemini"
+    "StudyGPT | FAISS + RAG + Gemini"
 )
