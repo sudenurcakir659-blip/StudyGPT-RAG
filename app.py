@@ -163,7 +163,7 @@ with st.sidebar:
             )
 
 
-st.divider()
+    st.divider()
 
 if st.button(
     "🧠 Bilgi Bankasını Oluştur",
@@ -172,18 +172,10 @@ if st.button(
     with st.spinner("Bilgi bankası hazırlanıyor..."):
         try:
             ingest.create_vector_database()
-
             st.success("🎉 Bilgi bankası başarıyla oluşturuldu.")
 
         except Exception as e:
             st.error(f"Hata: {e}")
-
-
-            except Exception as e:
-
-                st.error(
-                    str(e)
-                )
 
 
 
