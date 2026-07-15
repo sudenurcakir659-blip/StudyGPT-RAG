@@ -2,150 +2,77 @@ import os
 import faiss
 import pickle
 
-import google.generativeai as genai 
+from google import genai
+from sentence_transformers import SentenceTransformer
 
-genai.configure(
+
+# =====================================================
+# GEMINI CLIENT
+# =====================================================
+
+client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY")
 )
-from sentence_transformers import SentenceTransformer 
 
 
 # =====================================================
-# KLASÖRLER
+# PATHS
 # =====================================================
 
-BASE_DIR = os.path.dirname(
-    os.path.abspath(__file__)
-)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-VECTOR_FOLDER = os.path.join(
-    BASE_DIR,
-    "vector_db"
-)
+VECTOR_FOLDER = os.path.join(BASE_DIR, "vector_db")
 
-
-INDEX_PATH = os.path.join(
-    VECTOR_FOLDER,
-    "vector.index"
-)
-
-CHUNKS_PATH = os.path.join(
-    VECTOR_FOLDER,
-    "chunks.pkl"
-)
-
-METADATA_PATH = os.path.join(
-    VECTOR_FOLDER,
-    "metadata.pkl"
-)
-
+INDEX_PATH = os.path.join(VECTOR_FOLDER, "vector.index")
+CHUNKS_PATH = os.path.join(VECTOR_FOLDER, "chunks.pkl")
+METADATA_PATH = os.path.join(VECTOR_FOLDER, "metadata.pkl")
 
 
 # =====================================================
-# MODELLER
+# EMBEDDING MODEL
 # =====================================================
-
-MODEL_NAME = "all-MiniLM-L6-v2"
-
 
 embedding_model = SentenceTransformer(
-    MODEL_NAME
+    "all-MiniLM-L6-v2"
 )
 
 
-
 # =====================================================
-# GEMINI AYARI
-# =====================================================
-
-api_key = os.getenv(
-    "GEMINI_API_KEY"
-)
-
-
-if api_key:
-
-    genai.configure(
-        api_key=api_key
-    )
-
-
-model = genai.GenerativeModel(
-    "gemini-2.5-flash"
-)
-
-
-
-# =====================================================
-# DATABASE YÜKLE
+# LOAD DATABASE
 # =====================================================
 
 def load_database():
 
     if not os.path.exists(INDEX_PATH):
+        raise Exception("FAISS veritabanı bulunamadı.")
 
-        raise Exception(
-            "FAISS veritabanı bulunamadı."
-        )
+    index = faiss.read_index(INDEX_PATH)
 
-
-    index = faiss.read_index(
-        INDEX_PATH
-    )
-
-
-    with open(
-        CHUNKS_PATH,
-        "rb"
-    ) as f:
-
+    with open(CHUNKS_PATH, "rb") as f:
         chunks = pickle.load(f)
 
-
-    with open(
-        METADATA_PATH,
-        "rb"
-    ) as f:
-
+    with open(METADATA_PATH, "rb") as f:
         metadata = pickle.load(f)
-
 
     return index, chunks, metadata
 
 
-
 # =====================================================
-# BENZER DOKÜMAN ARAMA
+# SEARCH
 # =====================================================
 
-def search_documents(
-        question,
-        k=5
-):
-
+def search_documents(question, k=5):
 
     index, chunks, metadata = load_database()
-
 
     vector = embedding_model.encode(
         [question],
         convert_to_numpy=True
-    )
+    ).astype("float32")
 
-
-    vector = vector.astype(
-        "float32"
-    )
-
-
-    distances, ids = index.search(
-        vector,
-        k
-    )
-
+    distances, ids = index.search(vector, k)
 
     results = []
-
 
     for idx in ids[0]:
 
@@ -159,82 +86,52 @@ def search_documents(
                 }
             )
 
-
     return results
 
 
-
 # =====================================================
-# RAG CEVAP
+# ASK
 # =====================================================
 
 def ask(question):
 
+    docs = search_documents(question)
 
-    documents = search_documents(
-        question
-    )
-
-
-    if not documents:
-
-        return (
-            "Bu soru için uygun ders içeriği bulunamadı."
-        )
-
-
+    if len(docs) == 0:
+        return "Bu soru için uygun içerik bulunamadı."
 
     context = ""
 
-
-    for doc in documents:
+    for doc in docs:
 
         context += f"""
+Kaynak: {doc['source']}
+Sayfa: {doc['page']}
 
-Kaynak:
-{doc['source']}
-
-Sayfa:
-{doc['page']}
-
-İçerik:
 {doc['text']}
 
-----------------------
-
+---------------------------------------
 """
 
-
-
     prompt = f"""
-
 Sen StudyGPT isimli üniversite ders asistanısın.
 
-Öğrencinin sorusunu sadece verilen ders
-içeriğine dayanarak cevapla.
+Sadece verilen ders notlarını kullan.
 
-Kurallar:
-- Türkçe cevap ver.
-- Açıklayıcı anlat.
-- Gereksiz bilgi ekleme.
-- Bilgi yoksa belirt.
+Bilgi yoksa bilmiyorum de.
 
-
-DERS İÇERİĞİ:
+Ders Notları:
 
 {context}
 
-
-SORU:
+Soru:
 
 {question}
-
 """
 
-
-    response = model.generate_content(
-        prompt
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt
     )
-
 
     return response.text
