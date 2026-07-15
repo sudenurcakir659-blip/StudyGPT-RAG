@@ -122,7 +122,7 @@ with st.sidebar:
 
 
             os.makedirs(
-                "documents",
+                "data/pdf",
                 exist_ok=True
             )
 
@@ -131,7 +131,7 @@ with st.sidebar:
 
 
                 path = os.path.join(
-                    "documents",
+                    "data/pdf",
                     file.name
                 )
 
@@ -169,22 +169,21 @@ with st.sidebar:
 
 
     if st.button(
-        "🧠 Bilgi Bankasını Oluştur",
-        use_container_width=True
-    ):
+    "🧠 Bilgi Bankasını Oluştur",
+    use_container_width=True
+):
 
+    with st.spinner("Bilgi bankası hazırlanıyor..."):
 
-        with st.spinner(
-            "Bilgi bankası hazırlanıyor..."
-        ):
+        try:
 
-            try:
+            ingest.create_vector_database()
 
-                ingest.main()
+            st.success("🎉 Bilgi bankası başarıyla oluşturuldu.")
 
-                st.success(
-                    "Bilgi bankası hazır 🎉"
-                )
+        except Exception as e:
+
+            st.error(f"Hata: {e}") 
 
 
             except Exception as e:
