@@ -20,17 +20,18 @@ if not api_key:
         api_key = None
 
 if not api_key:
-    raise Exception(
-        "GEMINI_API_KEY bulunamadı."
-    )
+    raise Exception("GEMINI_API_KEY bulunamadı.")
 
-client = genai.Client(
-    api_key=api_key
-)
+client = genai.Client(api_key=api_key)
+
+
+# =====================================================
+# YEDEK MODELLER
+# =====================================================
 
 MODELS = [
-    "gemini-3.5-flash",
-    "gemini-2.5-flash",
+    "gemini-flash-latest",
+    "gemini-flash-lite-latest",
     "gemini-2.0-flash",
     "gemini-2.0-flash-lite",
 ]
@@ -79,7 +80,7 @@ def load_database():
 
 
 # =====================================================
-# SEARCH
+# SEARCH DOCUMENTS
 # =====================================================
 
 def search_documents(question, k=5):
@@ -131,20 +132,20 @@ Sayfa: {doc['page']}
 
 {doc['text']}
 
------------------------------------------
+---------------------------------------------
 """
 
     prompt = f"""
-Sen StudyGPT isimli üniversite ders asistanısın.
+Sen StudyGPT isimli üniversite ders çalışma asistanısın.
 
-Sadece aşağıdaki ders notlarını kullan.
+Sadece verilen ders notlarını kullan.
 
 Kurallar:
 
 - Türkçe cevap ver.
 - Bilgi uydurma.
-- Bilgi yoksa "Bu bilgi ders notlarında bulunmuyor." de.
 - Açıklayıcı anlat.
+- Bilgi yoksa "Bu bilgi ders notlarında bulunmuyor." de.
 
 DERS NOTLARI
 
@@ -155,15 +156,25 @@ SORU
 {question}
 """
 
-    try:
+    last_error = None
 
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=prompt,
-        )
+    for model_name in MODELS:
 
-        return response.text
+        try:
 
-    except Exception as e:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+            )
 
-        return f"Gemini Hatası:\n\n{str(e)}"
+            if hasattr(response, "text") and response.text:
+                return response.text
+
+            return "Model cevap döndürmedi."
+
+        except Exception as e:
+
+            last_error = e
+            continue
+
+    return f"🤖 Gemini Hatası:\n\n{last_error}"
