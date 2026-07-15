@@ -28,7 +28,12 @@ client = genai.Client(
     api_key=api_key
 )
 
-MODEL_NAME = "gemini-3.5-flash"
+MODELS = [
+    "gemini-3.5-flash",
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+]
 
 
 # =====================================================
