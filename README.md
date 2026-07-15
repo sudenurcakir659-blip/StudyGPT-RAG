@@ -8,7 +8,10 @@ StudyGPT-RAG, yüklenen ders PDF'lerinden bilgi çıkararak öğrencilerin sorul
 
 </div>
 
----
+--- ## 🌐 Live Demo
+
+🚀 Try StudyGPT:
+https://studygpt-rag.streamlit.app/
 
 ##  Proje Hakkında
 
