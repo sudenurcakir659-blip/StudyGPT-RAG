@@ -1,13 +1,13 @@
 import os
-import faiss
 import pickle
+import faiss
 
 from google import genai
 from sentence_transformers import SentenceTransformer
 
 
 # =====================================================
-# GEMINI CLIENT
+# GEMINI
 # =====================================================
 
 client = genai.Client(
@@ -76,7 +76,7 @@ def search_documents(question, k=5):
 
     for idx in ids[0]:
 
-        if idx < len(chunks):
+        if idx != -1 and idx < len(chunks):
 
             results.append(
                 {
@@ -98,7 +98,7 @@ def ask(question):
     docs = search_documents(question)
 
     if len(docs) == 0:
-        return "Bu soru için uygun içerik bulunamadı."
+        return "Bu soru için uygun ders içeriği bulunamadı."
 
     context = ""
 
@@ -110,7 +110,7 @@ Sayfa: {doc['page']}
 
 {doc['text']}
 
----------------------------------------
+-----------------------------------------
 """
 
     prompt = f"""
@@ -118,20 +118,24 @@ Sen StudyGPT isimli üniversite ders asistanısın.
 
 Sadece verilen ders notlarını kullan.
 
-Bilgi yoksa bilmiyorum de.
+Kurallar:
 
-Ders Notları:
+- Türkçe cevap ver.
+- Bilgi uydurma.
+- Bilgi yoksa 'Bu bilgi ders notlarında bulunmuyor.' de.
+
+DERS NOTLARI
 
 {context}
 
-Soru:
+SORU
 
 {question}
 """
 
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
+        model="gemini-2.5-flash-lite",
+        contents=prompt,
     )
 
     return response.text
