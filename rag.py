@@ -1,6 +1,7 @@
 import os
 import pickle
 import faiss
+import streamlit as st
 
 from google import genai
 from sentence_transformers import SentenceTransformer
@@ -10,9 +11,24 @@ from sentence_transformers import SentenceTransformer
 # GEMINI
 # =====================================================
 
+api_key = os.getenv("GEMINI_API_KEY")
+
+if not api_key:
+    try:
+        api_key = st.secrets["GEMINI_API_KEY"]
+    except Exception:
+        api_key = None
+
+if not api_key:
+    raise Exception(
+        "GEMINI_API_KEY bulunamadı."
+    )
+
 client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
+    api_key=api_key
 )
+
+MODEL_NAME = "gemini-3.5-flash"
 
 
 # =====================================================
@@ -116,13 +132,14 @@ Sayfa: {doc['page']}
     prompt = f"""
 Sen StudyGPT isimli üniversite ders asistanısın.
 
-Sadece verilen ders notlarını kullan.
+Sadece aşağıdaki ders notlarını kullan.
 
 Kurallar:
 
 - Türkçe cevap ver.
 - Bilgi uydurma.
-- Bilgi yoksa 'Bu bilgi ders notlarında bulunmuyor.' de.
+- Bilgi yoksa "Bu bilgi ders notlarında bulunmuyor." de.
+- Açıklayıcı anlat.
 
 DERS NOTLARI
 
@@ -133,9 +150,15 @@ SORU
 {question}
 """
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash-lite",
-        contents=prompt,
-    )
+    try:
 
-    return response.text
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=prompt,
+        )
+
+        return response.text
+
+    except Exception as e:
+
+        return f"Gemini Hatası:\n\n{str(e)}"
